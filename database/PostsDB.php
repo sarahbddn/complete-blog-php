@@ -5,22 +5,23 @@ class PostsDB
     {
         
     }
-    function getPublishedPosts() {
-        // use global $conn object in function
+   public static function getPublishedPosts() {
         global $conn;
-        $sql = "SELECT * FROM posts WHERE published=true";
-        $result = mysqli_query($conn, $sql);
-        // fetch all posts as an associative array called $posts
-        $posts = mysqli_fetch_all($result, MYSQLI_ASSOC);
-    
-        $final_posts = array();
-        foreach ($posts as $post) {
-            $post['topic'] = getPostTopic($post['id']); 
-            array_push($final_posts, $post);
+
+        $query = "SELECT * FROM posts WHERE published=trues";
+         $db=$conn->prepare($query);
+         $db->execute([]);  
+        $list = new ArrayObject();
+        $result = $db->fetchAll(PDO::FETCH_OBJ);
+        foreach ($result as $key => $value) {
+           $post = new Posts($value->id,$value->username, $value->title, $value->slug, $value->views, $value->image, $value->body, $value->published, $value->createdAt);
+           $list->append($post);
         }
-        return $final_posts;
+        return  $list;
+        // use global $conn object in function
+    
     }
-    function getPostTopic($post_id){
+   /* function getPostTopic($post_id){
         global $conn;
         $sql = "SELECT * FROM topics WHERE id=
                 (SELECT topic_id FROM post_topic WHERE post_id=$post_id) LIMIT 1";
@@ -73,5 +74,5 @@ class PostsDB
         $string = strtolower($string);
         $slug = preg_replace('/[^A-Za-z0-9-]+/', '-', $string);
         return $slug;
-    }
+    }*/
 }

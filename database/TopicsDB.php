@@ -34,42 +34,36 @@ class TopicDB
     * - sets topic fields on form for editing
     * * * * * * * * * * * * * * * * * * * * * */
     function editTopic($topic_id) {
-        global $conn, $topic_name, $isEditingTopic, $topic_id;
-        $sql = "SELECT * FROM topics WHERE id=$topic_id LIMIT 1";
-        $result = mysqli_query($conn, $sql);
-        $topic = mysqli_fetch_assoc($result);
-        // set form values ($topic_name) on the form to be updated
-        $topic_name = $topic['name'];
+
+        global $conn;
+        $query = "SELECT * FROM topics WHERE id=:id";
+        $db=$conn->prepare($query);
+        $db->execute(['id'=>$topic_id]);  
+	    $result = $db->fetch(PDO::FETCH_OBJ);
+        if ($result)
+            return new Topics($result->id,$result->name,$result->slug);
+        else
+            return false;
     }
-    function updateTopic($request_values) {
-        global $conn, $errors, $topic_name, $topic_id;
-        $topic_name = esc($request_values['topic_name']);
-        $topic_id = esc($request_values['topic_id']);
-        // create slug: if topic is "Life Advice", return "life-advice" as slug
-        $topic_slug = makeSlug($topic_name);
-        // validate form
-        if (empty($topic_name)) { 
-            array_push($errors, "Topic name required"); 
-        }
-        // register topic if there are no errors in the form
-        if (count($errors) == 0) {
-            $query = "UPDATE topics SET name='$topic_name', slug='$topic_slug' WHERE id=$topic_id";
-            mysqli_query($conn, $query);
-    
-            $_SESSION['message'] = "Topic updated successfully";
-            header('location: topics.php');
-            exit(0);
-        }
+    function updateTopic($topic) {
+
+
+        global $conn;
+        $query = "UPDATE  topics set name=:name, slug=:slug WHERE id=:id";
+		 $db=$conn->prepare($query);
+         $db->execute([
+            'name'=>$topic->getName(),
+            'slug'=>$topic->getSlug(),
+            'id'=>$topic->getId()
+        ]);  
+
     }
     // delete topic 
     function deleteTopic($topic_id) {
         global $conn;
-        $sql = "DELETE FROM topics WHERE id=$topic_id";
-        if (mysqli_query($conn, $sql)) {
-            $_SESSION['message'] = "Topic successfully deleted";
-            header("location: topics.php");
-            exit(0);
-        }
+        $sql = "DELETE FROM topics WHERE id=:id";
+        $db=$conn->prepare($sql);
+        $db->execute(['id'=>$topic_id]);     
     }  
      public static function  makeSlug($string){
         $string = strtolower($string);
